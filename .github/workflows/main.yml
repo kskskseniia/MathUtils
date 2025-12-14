@@ -38,16 +38,21 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
+          
+      # Linux/macOS: выдаём права на запуск gradlew
+      - name: Make gradlew executable
+        if: runner.os != 'Windows'
+        run: chmod +x ./gradlew
 
-      # Сборка проекта и запуск тестов
-      - name: Build and run tests
+      # Linux/macOS: сборка + тесты
+      - name: Build and run tests (Linux/macOS)
+        if: runner.os != 'Windows'
         run: ./gradlew clean build
-        shell: bash
 
       # Сборка и тесты для Windows
       - name: Build and run tests (Windows)
         if: runner.os == 'Windows'
-        run: gradlew.bat clean build
+        run: .\gradlew.bat clean build
 
       # Сохранение отчётов тестов
       - name: Upload test reports
