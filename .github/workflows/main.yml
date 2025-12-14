@@ -29,10 +29,12 @@ jobs:
     steps:
       # Получение кода репозитория
       - name: Checkout repository
+      # GitHub Actions: для получения исходного кода репозитория
         uses: actions/checkout@v4
 
       # Установка Java 17
       - name: Set up JDK 17
+        # GitHub Actions: для установки среды выполнения Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -57,6 +59,7 @@ jobs:
       # Сохранение отчётов тестов
       - name: Upload test reports
         if: always()
+        # GitHub Actions: для сохранения отчётов
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.os }}
@@ -64,3 +67,29 @@ jobs:
             build/reports/tests/test
             build/test-results/test
           retention-days: 7
+          
+  # Job для деплоя (присутствует логически, но отключён)
+  deploy:
+    name: Deploy to production server
+    # Деплой отключён (job всегда пропускается)
+    if: false
+    # ЗАВИСЕМОСТЬ: только после успешного build-and-test
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        # GitHub Actions: для выполнения команд на удалённом сервере по протоколу SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}        # адрес сервера
+          username: ${{ secrets.SSH_USER }}    # пользователь
+          key: ${{ secrets.SSH_KEY }}          # приватный ключ
+          port: ${{ secrets.SSH_PORT }}        # порт SSH
+          script: |
+            cd /var/simak/math_utils
+            git pull origin main
+            chmod +x ./gradlew
+            # Сборка проекта и запуск тестов
+            ./gradlew clean build
+            # Перезапуск systemd-сервиса приложения (если он есть)
+            sudo systemctl restart math_utils.service
